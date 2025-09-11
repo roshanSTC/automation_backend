@@ -52,7 +52,6 @@ def extract_pdf_content(pdf_path):
 
     return {"tables": tables, "broker": broker_name}
 
-
 def detect_broker_name(text: str) -> str:
     """Detect broker name from text"""
     brokers = {
@@ -68,7 +67,6 @@ def detect_broker_name(text: str) -> str:
         if key in text_lower:
             return fullname
     return "Unknown"
-
 
 def build_json_from_tables(tables, category, subcategory):
     results = []
@@ -126,13 +124,80 @@ def build_json_from_tables(tables, category, subcategory):
 
     return results
 
+def build_json_phillip(tables, category, subcategory):
+    results = []
+
+    for df in tables:
+        # Phillip Capital tables have different headers
+        if "Mutual Fund Name" not in df.columns or "Mutual Fund Scheme" not in df.columns:
+            continue
+
+        for _, row in df.iterrows():
+            scrip_code = str(row.get("Mutual Fund Name", "")).strip()
+            scrip_name = str(row.get("Mutual Fund Scheme", "")).strip()
+            unit = try_float(row.get("Purchase Units"))
+            nav = try_float(row.get("Buy Rate"))
+            purchase_amount = try_float(row.get("Buy Total"))
+            order_date = str(row.get("Date", "")).strip()
+
+            # ⚠️ ISIN may not exist in Phillip PDF
+            isin = str(row.get("ISIN", "")).strip() if "ISIN" in df.columns else ""
+
+            entity_table = {
+                "scripname": scrip_name,
+                "scripcode": scrip_code,
+                "benchmark": "0",
+                "category": category,
+                "subcategory": subcategory,
+                "nickname": scrip_name,
+                "isin": isin
+            }
+
+            action_table = {
+                "scrip_code": scrip_code,
+                "mode": "DEMAT",
+                "order_type": "PURCHASE",
+                "scrip_name": scrip_name,
+                "isin": isin,
+                "order_number": str(row.get("Order No", "")),
+                "folio_number": str(row.get("Folio No", "")),
+                "nav": nav,
+                "stt": 0.0,
+                "unit": unit,
+                "redeem_amount": 0.0,
+                "purchase_amount": purchase_amount,
+                "net_amount": 0.0,   # can be computed later
+                "order_date": order_date,
+                "sett_no": str(row.get("Sett No", "")),
+                "stamp_duty": try_float(row.get("__stamp_duty__", 0.0)),
+                "page_number": row.get("__page__", None)
+            }
+
+            results.append({
+                "entityTable": entity_table,
+                "actionTable": action_table
+            })
+
+    return results
+
+def process_pdf(pdf_file, category, subcategory):
+    extracted = extract_pdf_content(pdf_file)
+    broker = extracted["broker"]
+
+    if broker == "Motilal Oswal Financial Services Limited":
+        json_data = build_json_from_tables(extracted["tables"], category, subcategory)
+    elif broker == "Phillip Capital (India) Pvt Ltd":
+        json_data = build_json_phillip(extracted["tables"], category, subcategory)
+    else:
+        raise ValueError(f"❌ No parser available for broker: {broker}")
+
+    return broker, json_data
 
 def try_float(val):
     try:
         return float(val)
     except (ValueError, TypeError):
         return 0
-
 
 if __name__ == "__main__":
     pdf_file = "Motilal.pdf"
