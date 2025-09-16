@@ -129,21 +129,24 @@ def build_json_from_tables(tables, category, subcategory):
 
 def build_json_phillip(tables, category, subcategory):
     results = []
-    print("Parsing Phillip Contract Note /n" "category:",category, "/n","subcategory:", subcategory,"Tables:", tables   )
+    print( tables )
     return results
-
 
 def process_pdf(pdf_file, category, subcategory):
     print('process_pdf')
     extracted = extract_pdf_content(pdf_file)
     broker = extracted["broker"]
 
-    if broker == "Motilal Oswal Financial Services Limited":
+    # ✅ Dispatcher based on broker + category + subcategory
+    if broker == "Motilal Oswal Financial Services Limited" and category == "Equity" and subcategory == "Mutual Fund":
         json_data = build_json_from_tables(extracted["tables"], category, subcategory)
-    elif broker == "PHILLIPCAPITAL (INDIA) PVT LTD":
+
+    elif broker == "PHILLIPCAPITAL (INDIA) PVT LTD" and category == "Equity" and subcategory == "Mutual Fund":
         json_data = build_json_phillip(extracted["tables"], category, subcategory)
+
     else:
-        raise ValueError(f"❌ No parser available for broker: {broker}")
+        raise ValueError(f"❌ No parser available for Broker: {broker}, "
+                         f"Category: {category}, Subcategory: {subcategory}")
 
     return broker, json_data
 
