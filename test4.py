@@ -4,16 +4,18 @@ import json
 import re
 
 def extract_pdf_content(pdf_path):
+    print("extract_pdf_content")
     tables = []
     broker_name = "Unknown"
 
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
             text = page.extract_text() or ""
-
             # ✅ Detect broker from text (only once)
             if broker_name == "Unknown" and text:
                 broker_name = detect_broker_name(text)
+                
+                
 
             # ✅ Contract Note Date
             contract_match = re.search(r"BSE MUTUAL FUND CONTRACT NOTE\s*:\s*(\d{2}/\d{2}/\d{4})", text)
@@ -59,7 +61,7 @@ def detect_broker_name(text: str) -> str:
         "zerodha": "Zerodha Broking Limited",
         "hdfc": "HDFC Securities Limited",
         "icici": "ICICI Securities Limited",
-        "phillip capital": "Phillip Capital (India) Pvt Ltd"
+        "phillipcapital": "PHILLIPCAPITAL (INDIA) PVT LTD"
     }
 
     text_lower = text.lower()
@@ -69,6 +71,7 @@ def detect_broker_name(text: str) -> str:
     return "Unknown"
 
 def build_json_from_tables(tables, category, subcategory):
+    print("build_json_from_tables")
     results = []
 
     for df in tables:
@@ -110,7 +113,7 @@ def build_json_from_tables(tables, category, subcategory):
                 "unit": try_float(row.get("Unit")),
                 "redeem_amount": try_float(row.get("Reedem Amt")),
                 "purchase_amount": try_float(row.get("Purchase Amt")),
-                "net_amount": try_float(row.get("Net Amount")),
+                "net_amount":  try_float(row.get("Purchase Amt")),
                 "order_date": order_date,
                 "sett_no": sett_no,
                 "stamp_duty": per_row_stamp_duty,
@@ -126,67 +129,18 @@ def build_json_from_tables(tables, category, subcategory):
 
 def build_json_phillip(tables, category, subcategory):
     results = []
-
-    for df in tables:
-        # Phillip Capital tables have different headers
-        if "Mutual Fund Name" not in df.columns or "Mutual Fund Scheme" not in df.columns:
-            continue
-
-        for _, row in df.iterrows():
-            scrip_code = str(row.get("Mutual Fund Name", "")).strip()
-            scrip_name = str(row.get("Mutual Fund Scheme", "")).strip()
-            unit = try_float(row.get("Purchase Units"))
-            nav = try_float(row.get("Buy Rate"))
-            purchase_amount = try_float(row.get("Buy Total"))
-            order_date = str(row.get("Date", "")).strip()
-
-            # ⚠️ ISIN may not exist in Phillip PDF
-            isin = str(row.get("ISIN", "")).strip() if "ISIN" in df.columns else ""
-
-            entity_table = {
-                "scripname": scrip_name,
-                "scripcode": scrip_code,
-                "benchmark": "0",
-                "category": category,
-                "subcategory": subcategory,
-                "nickname": scrip_name,
-                "isin": isin
-            }
-
-            action_table = {
-                "scrip_code": scrip_code,
-                "mode": "DEMAT",
-                "order_type": "PURCHASE",
-                "scrip_name": scrip_name,
-                "isin": isin,
-                "order_number": str(row.get("Order No", "")),
-                "folio_number": str(row.get("Folio No", "")),
-                "nav": nav,
-                "stt": 0.0,
-                "unit": unit,
-                "redeem_amount": 0.0,
-                "purchase_amount": purchase_amount,
-                "net_amount": 0.0,   # can be computed later
-                "order_date": order_date,
-                "sett_no": str(row.get("Sett No", "")),
-                "stamp_duty": try_float(row.get("__stamp_duty__", 0.0)),
-                "page_number": row.get("__page__", None)
-            }
-
-            results.append({
-                "entityTable": entity_table,
-                "actionTable": action_table
-            })
-
+    print("Parsing Phillip Contract Note /n" "category:",category, "/n","subcategory:", subcategory,"Tables:", tables   )
     return results
 
+
 def process_pdf(pdf_file, category, subcategory):
+    print('process_pdf')
     extracted = extract_pdf_content(pdf_file)
     broker = extracted["broker"]
 
     if broker == "Motilal Oswal Financial Services Limited":
         json_data = build_json_from_tables(extracted["tables"], category, subcategory)
-    elif broker == "Phillip Capital (India) Pvt Ltd":
+    elif broker == "PHILLIPCAPITAL (INDIA) PVT LTD":
         json_data = build_json_phillip(extracted["tables"], category, subcategory)
     else:
         raise ValueError(f"❌ No parser available for broker: {broker}")
@@ -200,14 +154,13 @@ def try_float(val):
         return 0
 
 if __name__ == "__main__":
-    pdf_file = "Motilal.pdf"
+    pdf_file = "Phillip.pdf"
     category = "Equity"
     subcategory = "Mutual Fund"
 
-    data = extract_pdf_content(pdf_file)
-    json_data = build_json_from_tables(data["tables"], category, subcategory)
+    broker, json_data = process_pdf(pdf_file, category, subcategory)
 
-    print(f"✅ Detected Broker: {data['broker']}")
+    print(f"✅ Detected Broker: {broker}")
     print(json.dumps(json_data, indent=4))
 
     with open("output.json", "w") as f:
