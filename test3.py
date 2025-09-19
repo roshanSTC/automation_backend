@@ -10,7 +10,7 @@ def extract_pdf_content(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
             text = page.extract_text() or ""
-            
+            print(text)
             # ✅ Detect broker from text
             if broker_name == "Unknown":
                 broker_name = detect_broker_name(text)
@@ -59,10 +59,9 @@ def detect_broker_name(text: str) -> str:
 def build_json_motilal(tables, category, subcategory):
     results = []
     for df in tables:
-        if "ISIN" not in df.columns:
-            continue
 
         for _, row in df.iterrows():
+            print("RAW ROW:", row.to_dict()) 
             scrip_name = str(row.get("Scrip Name", "")).strip()
             if not scrip_name or scrip_name.lower() == "none":
                 continue
@@ -172,7 +171,7 @@ def try_float(val):
 
 
 if __name__ == "__main__":
-    pdf_file = "testing.pdf"
+    pdf_file = "Motilal.pdf"
     category = "Equity"
     subcategory = "Mutual Fund"
     

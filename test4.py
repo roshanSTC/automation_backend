@@ -11,6 +11,7 @@ def extract_pdf_content(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
             text = page.extract_text() or ""
+            print(text)
             # ✅ Detect broker from text (only once)
             if broker_name == "Unknown" and text:
                 broker_name = detect_broker_name(text)
@@ -157,7 +158,7 @@ def try_float(val):
         return 0
 
 if __name__ == "__main__":
-    pdf_file = "Phillip.pdf"
+    pdf_file = "Motilal.pdf"
     category = "Equity"
     subcategory = "Mutual Fund"
 
