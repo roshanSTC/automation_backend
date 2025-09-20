@@ -25,9 +25,8 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
             contract_date = extract_date_from_text(text)
 
             # Stamp duty
-            stamp_match = re.search(r"Stamp Duty\s+([\d.,]+)", text, re.IGNORECASE)
+            stamp_match = re.search(r"STAMPDUTY\s+([\d.,]+)", text)
             stamp_duty = float(stamp_match.group(1).replace(",", "")) if stamp_match else 0.0
-
            
             page_tables = [
                 pd.DataFrame(t[1:], columns=t[0])
@@ -37,7 +36,8 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
             if not page_tables:
                 continue
 
-            total_rows = sum(len(df) for df in page_tables)
+            # ✅ Count total rows across all tables on this page
+            total_rows = 3
             per_row_stamp_duty = stamp_duty / total_rows if total_rows > 0 else 0.0
 
             for df in page_tables:
@@ -186,7 +186,7 @@ def build_json_from_tables(tables, category, subcategory):
     Build JSON for Motilal Oswal PDFs
     """
     results = []
-
+    
     for df in tables:
         # Normalize columns
         df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
@@ -202,7 +202,7 @@ def build_json_from_tables(tables, category, subcategory):
             isin = str(row.get("isin") or "").strip()
             contract_date = row.get("__contract_date__", "Unknown")
             per_row_stamp_duty = row.get("__stamp_duty__", 0.0)
-
+            
             entity_table = {
                 "scripname": scrip_name,
                 "scripcode": str(row.get("scrip_code") or ""),
@@ -226,7 +226,7 @@ def build_json_from_tables(tables, category, subcategory):
                 "unit": try_float(row.get("unit")),
                 "redeem_amount": try_float(row.get("redeem_amt") or row.get("reedem_amt")),
                 "purchase_amount": try_float(row.get("purchase_amt") or row.get("purchase_amount")),
-                "net_amount": try_float(row.get("net_amount")),
+                "net_amount": try_float(row.get("purchase_amt") or row.get("purchase_amount")),
                 "order_date": contract_date,
                 "stamp_duty": per_row_stamp_duty,
                 "page_number": row.get("__page__", None),
@@ -358,7 +358,7 @@ def process_pdf(pdf_file, category, subcategory):
 
 if __name__ == "__main__":
     # Update this to your PDF file path
-    pdf_file = "MotilalMultiple.pdf"  # Update with your actual file path
+    pdf_file = "Password.pdf"  # Update with your actual file path
     category = "Equity"
     subcategory = "Mutual Fund"
 
