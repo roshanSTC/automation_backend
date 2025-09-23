@@ -237,63 +237,85 @@ def build_json_from_tables(tables, category, subcategory):
     return results
 
 def build_json_phillip(tables, category, subcategory):
-    """
-    Build JSON for Phillip Capital PDFs
-    """
-    results = []
+    collected_values = []  # store only values
 
     for df in tables:
-        # Normalize headers using your helper
-        col_map = clean_columns(df)
-        df = df.rename(columns=col_map)
-        print(" Normalized Columns:", df.columns.tolist())
+        # Detect header row and normalize columns
+        if df.iloc[0].astype(str).str.contains("MUTUAL FUND NAME", case=False, na=False).any():
+            df.columns = (
+                df.iloc[0]
+                .astype(str)
+                .str.strip()
+                .str.lower()
+                .str.replace(" ", "_")
+                .str.replace("/", "_")
+            )
+            df = df.drop(index=0).reset_index(drop=True)
 
-        
-                
         for _, row in df.iterrows():
-            scrip_name = str(row.get("net_total") or "").strip()
-            print("scrip name:",scrip_name)
-            if not scrip_name or scrip_name.lower() == "none":
-                continue
+            collected_values.append(list(row.values))  # store all values
 
-            isin = str(row.get("isin") or "").strip()
-            print(isin)
-            contract_date = row.get("__contract_date__", "Unknown")
-            print(contract_date)
-            per_row_stamp_duty = row.get("__stamp_duty__", 0.0)
-            print(per_row_stamp_duty)
+    # ✅ Filter out unnecessary rows and remove empty strings
+    filtered_values = []
+    for row in collected_values:
+        if not row or not row[0]:  # skip empty rows
+            continue
+        if str(row[0]).strip().lower() in [
+            'net obligation',
+            'cgst (@ 9.00%)',
+            'sgst (@ 9.00%)',
+            'stamp duty',
+            'total amount rs.'
+        ]:
+            continue
+        # Remove empty strings from the row
+        cleaned_row = [value for value in row if value not in (None, '')]
+        if cleaned_row:  # only add non-empty rows
+            filtered_values.append(cleaned_row)
+      # Create objects with entityTable and actionTable
+    final_results = []
+    print(filtered_values)
+    for row in filtered_values:
+        # Build actionTable
+        action_table = {
+            "scrip_code": row[0] if len(row) > 0 else "",
+            "mode": "DEMAT",
+            "order_type": "PURCHASE",
+            "scrip_name": row[1] if len(row) > 1 else "",
+            "isin": str(row[2]).replace(' ', ''),
+            "order_number": str(row[4]),
+            "folio_number": "0",
+            "nav": float(row[7]) if len(row) > 7 and str(row[7]).replace('.', '', 1).isdigit() else 0.0,
+            "stt":0.0,
+            "unit": float(str(row[5]).replace(' ', '')) ,
+            "redeem_amount": 0.0,
+            "purchase_amount": float(row[7]) ,
+            "net_amount": float(row[7]) ,
+            "order_date": row[9] if len(row) > 9 else "",
+            "stamp_duty": float(row[17]) if len(row) > 17 and str(row[17]).replace('.', '', 1).isdigit() else 0.0,
+            "page_number": None
+        }
 
-            # ✅ Entity Table (fund details)
-            entity_table = {
-                "scripname": scrip_name,
-                "scripcode": str(row.get("mutual_fund_name") or ""),
-                "benchmark": "0",
-                "category": category,
-                "subcategory": subcategory,
-                "nickname": scrip_name,
-                "isin": isin,
-            }
+        # Build entityTable (example: some key info, can customize)
+        entity_table = {
+            "scrip_name": row[1] if len(row) > 1 else "",
+            "scrip_code": row[0] if len(row) > 0 else "",
+            "benchmark": "0",
+            "category": category,
+            "subcategory": subcategory,
+            "nickname": row[1] if len(row) > 1 else "",
+            "isin": str(row[2]).replace(' ', ''),
+        }
 
-            # ✅ Action Table (transaction details)
-            action_table = {
-                "scrip_code": str(row.get("mutual_fund_name") or ""),
-                "scrip_name": scrip_name,
-                "isin": isin,
-                "order_number": str(row.get("order_no") or ""),
-                "order_time": str(row.get("order_time") or ""),
-                "unit": try_float(row.get("purchase_units") or row.get("unit")),
-                "nav": try_float(row.get("buy_rate") or row.get("nav")),
-                "purchase_amount": try_float(row.get("buy_total") or row.get("purchase_amount")),
-                "redeem_amount": try_float(row.get("sell_total") or row.get("redeem_amt")),
-                "net_amount": try_float(row.get("net_amount")),
-                "order_date": contract_date,
-                "stamp_duty": per_row_stamp_duty,
-                "page_number": row.get("__page__", None),
-            }
+        final_results.append({
+            "entityTable": entity_table,
+            "actionTable": action_table
+        })
+       
+       
 
-            results.append({"entityTable": entity_table, "actionTable": action_table})
-
-    return results
+    print("📌 Filtered & cleaned transaction rows:",final_results )
+    return final_results
 
 def clean_columns(df):
     """Normalize messy Phillip Capital headers to clean names"""
@@ -358,7 +380,7 @@ def process_pdf(pdf_file, category, subcategory):
 
 if __name__ == "__main__":
     # Update this to your PDF file path
-    pdf_file = "Password.pdf"  # Update with your actual file path
+    pdf_file = "Phillips.pdf"  # Update with your actual file path
     category = "Equity"
     subcategory = "Mutual Fund"
 
