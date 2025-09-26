@@ -12,18 +12,31 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
     """
     tables = []
     broker_name = "Unknown"
+    text = ""
+    print("function ectracted pdf content")
 
     with open_pdf(pdf_path_or_file, password=password) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
-            text = page.extract_text() or ""
+            page_text = page.extract_text() or ""
             
             # Detect broker once
-            if broker_name == "Unknown" and text:
-                broker_name = detect_broker_name(text)
+            if broker_name == "Unknown" and page_text:
+                broker_name = detect_broker_name(page_text)
 
+              # ✅ Skip extra pages for Phillip Capital
+            if broker_name == "Phillip Capital (India) Pvt Ltd" and page_num > 1:
+                continue  
+
+            # Save only first page’s text (or concatenate for other brokers)
+            if broker_name == "Phillip Capital (India) Pvt Ltd":
+                if page_num == 1:
+                    text = page_text
+            else:
+                text += "\n" + page_text  # concat for others
+            
             # Extract contract note date
             contract_date = extract_date_from_text(text)
-
+               
             # Stamp duty
             stamp_match = re.search(r"STAMPDUTY\s+([\d.,]+)", text)
             stamp_duty = float(stamp_match.group(1).replace(",", "")) if stamp_match else 0.0
@@ -32,10 +45,12 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
                 pd.DataFrame(t[1:], columns=t[0])
                 for t in page.extract_tables() if t and len(t) > 1
             ]
-
+            
+            print("page table:- ",page_tables)
+            
             if not page_tables:
                 continue
-
+               
             # ✅ Count total rows across all tables on this page
             total_rows = 3
             per_row_stamp_duty = stamp_duty / total_rows if total_rows > 0 else 0.0
@@ -46,6 +61,8 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
                 df["__stamp_duty__"] = per_row_stamp_duty
                 df["__broker__"] = broker_name
                 tables.append(df)
+            print("extract_pdf_content:- ", text) 
+        print("extract_pdf_content2:- ", text)         
 
     return {"tables": tables, "broker": broker_name, "text": text,   }
 
@@ -79,7 +96,7 @@ def parse_phillip_text_format(text):
     """
     lines = text.split('\n')
     transactions = []
-    print("roshan: parse_phillip_text_format ",text)
+    print(" parse_phillip_text_format ",text)
     
     # Look for transaction lines
     for i, line in enumerate(lines):
@@ -236,9 +253,59 @@ def build_json_from_tables(tables, category, subcategory):
 
     return results
 
-def build_json_phillip(tables, category, subcategory):
-    collected_values = []  # store only values
+def build_json_phillip_with_contract_note(tables, category, subcategory):
+    """Parser for Phillip Capital format WITH CONTRACT NOTE NO"""
+    results = []
+    print("with contract note ")
+    print("WORKING ON THIS FORMAT")
+    # for df in tables:
+    #     if "contract_note_no" not in [c.lower().replace(" ", "_") for c in df.columns]:
+    #         continue  
 
+    #     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+
+    #     for _, row in df.iterrows():
+    #         if not str(row.get("isin", "")).strip():
+    #             continue  
+
+    #         entity_table = {
+    #             "scrip_name": str(row.get("mutual_fund_scheme", "")),
+    #             "scrip_code": str(row.get("mutual_fund_name", "")),
+    #             "benchmark": "0",
+    #             "category": category,
+    #             "subcategory": subcategory,
+    #             "nickname": str(row.get("mutual_fund_scheme", "")),
+    #             "isin": str(row.get("isin", "")).replace(" ", ""),
+    #         }
+
+    #         action_table = {
+    #             "scrip_code": str(row.get("mutual_fund_name", "")),
+    #             "mode": "DEMAT",
+    #             "order_type": "PURCHASE",
+    #             "scrip_name": str(row.get("mutual_fund_scheme", "")),
+    #             "isin": str(row.get("isin", "")).replace(" ", ""),
+    #             "order_number": str(row.get("order_no", "")),
+    #             "folio_number": str(row.get("folio_no", "")),
+    #             "nav": try_float(row.get("buy_rate")),
+    #             "stt": 0.0,
+    #             "unit": try_float(row.get("purchase_units")),
+    #             "redeem_amount": 0.0,
+    #             "purchase_amount": try_float(row.get("buy_total")),
+    #             "net_amount": try_float(row.get("buy_total")),
+    #             "order_date": row.get("date", ""),
+    #             "stamp_duty": 0.0,
+    #             "page_number": row.get("__page__", None),
+    #             "contract_note_no": str(row.get("contract_note_no", "")),
+    #         }
+
+    #         results.append({"entityTable": entity_table, "actionTable": action_table})
+    
+    return results
+
+def build_json_phillip_without_contract_note(tables, category, subcategory):
+    collected_values = []  # store only values
+    print("without contract note ")
+    
     for df in tables:
         # Detect header row and normalize columns
         if df.iloc[0].astype(str).str.contains("MUTUAL FUND NAME", case=False, na=False).any():
@@ -274,7 +341,7 @@ def build_json_phillip(tables, category, subcategory):
             filtered_values.append(cleaned_row)
       # Create objects with entityTable and actionTable
     final_results = []
-    print(filtered_values)
+    
     for row in filtered_values:
         # Build actionTable
         action_table = {
@@ -350,25 +417,41 @@ def clean_columns(df):
 
     return mapping
 
+def detect_phillip_format(text: str) -> str:
+    print("detect phillips format:- ",text)
+    text_lower = text.lower()
+    
+    if "contract note no" in text_lower:
+        return "contract_note"
+    elif "mutual fund transaction confirmation note" in text_lower:
+        return "mfss"
+    else:
+        return "unknown"
+
 def process_pdf(pdf_file, category, subcategory):
     """
     Main function to process PDF and return JSON data
     """
+    json_data = []
     try:
         extracted = extract_pdf_content(pdf_file, category, subcategory)  # ✅ Pass category + subcategory
         broker = extracted["broker"]
-        
+              
         
         for i, df in enumerate(extracted["tables"]):
             if isinstance(df, pd.DataFrame) and not df.empty:
-                print(f"DEBUG: Table {i} has shape {df.shape}")
+                print(f" df.columns df.columns")
 
         if broker == "Motilal Oswal Financial Services Limited":
             json_data = build_json_from_tables(extracted["tables"], category, subcategory)
         elif broker == "Phillip Capital (India) Pvt Ltd":
-            json_data = build_json_phillip(extracted["tables"], category, subcategory)
-        else:
-            raise ValueError(f"No parser available for broker: {broker}")
+            format_type = detect_phillip_format(extracted["text"])
+            if format_type == "contract_note":
+                json_data = build_json_phillip_with_contract_note(extracted["tables"], category, subcategory)
+            elif format_type == "mfss":
+                json_data = build_json_phillip_without_contract_note(extracted["tables"], category, subcategory)
+            else:
+                raise ValueError("Unsupported Phillip Capital format")
 
         print(f"DEBUG: JSON data length -> {len(json_data)}")
         return broker, json_data
@@ -380,7 +463,7 @@ def process_pdf(pdf_file, category, subcategory):
 
 if __name__ == "__main__":
     # Update this to your PDF file path
-    pdf_file = "Phillips.pdf"  # Update with your actual file path
+    pdf_file = "Phillip.pdf"  # Update with your actual file path
     category = "Equity"
     subcategory = "Mutual Fund"
 
