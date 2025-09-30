@@ -46,7 +46,6 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
                 for t in page.extract_tables() if t and len(t) > 1
             ]
             
-            print("page table:- ",page_tables)
             
             if not page_tables:
                 continue
@@ -60,9 +59,7 @@ def extract_pdf_content(pdf_path_or_file, category, subcategory, password=None):
                 df["__contract_date__"] = contract_date
                 df["__stamp_duty__"] = per_row_stamp_duty
                 df["__broker__"] = broker_name
-                tables.append(df)
-            print("extract_pdf_content:- ", text) 
-        print("extract_pdf_content2:- ", text)         
+                tables.append(df)        
 
     return {"tables": tables, "broker": broker_name, "text": text,   }
 
@@ -254,52 +251,85 @@ def build_json_from_tables(tables, category, subcategory):
     return results
 
 def build_json_phillip_with_contract_note(tables, category, subcategory):
-    """Parser for Phillip Capital format WITH CONTRACT NOTE NO"""
+    """Parser for Phillip Capital format WITH CONTRACT NOTE NO (equity contract notes)"""
     results = []
-    print("with contract note ")
-    print("WORKING ON THIS FORMAT")
-    # for df in tables:
-    #     if "contract_note_no" not in [c.lower().replace(" ", "_") for c in df.columns]:
-    #         continue  
+    print("Parsing Phillip Contract Note (equity format)...")
+    print("tables :- ", tables)
+    # column mapping to handle variations
+    col_map = {
+        "order_no": ["order_no.", "order_no"],
+        "security": ["security_/_contract_description", "security_/_contract\ndescription"],
+        "buy_sell": ["buy(b)_/_sell(s)", "buy/sell"],
+        "quantity": ["quantity"],
+        "gross_rate": ["gross_rate/_trade_price_per_unit_(rs.)@", "gross_rate/_trade_price"],
+        "brokerage": ["brokerage_per_unit_(rs.)", "brokerage"],
+        "net_rate": ["net_rate_per_unit_(rs.)**", "net_rate_per_unit_(rs.)"],
+        "stt": ["stt"],
+        "net_total": ["net_total_(before_levies)_(rs.)", "net_total"],
+    }
 
-    #     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    def get_val(row, keys, default=""):
+        for k in keys:
+            if k in row:
+                return row[k]
+        return default
 
-    #     for _, row in df.iterrows():
-    #         if not str(row.get("isin", "")).strip():
-    #             continue  
+    for df in tables:
+        # normalize column names
+        df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+        print("df.columns :-", df.columns)
 
-    #         entity_table = {
-    #             "scrip_name": str(row.get("mutual_fund_scheme", "")),
-    #             "scrip_code": str(row.get("mutual_fund_name", "")),
-    #             "benchmark": "0",
-    #             "category": category,
-    #             "subcategory": subcategory,
-    #             "nickname": str(row.get("mutual_fund_scheme", "")),
-    #             "isin": str(row.get("isin", "")).replace(" ", ""),
-    #         }
+        # drop "NSE - CAPITAL - Normal..." lines
+        df = df[~df.iloc[:, 0].astype(str).str.contains("NSE - CAPITAL", na=False, case=False)]
+        print("cleaned df:-", df)
 
-    #         action_table = {
-    #             "scrip_code": str(row.get("mutual_fund_name", "")),
-    #             "mode": "DEMAT",
-    #             "order_type": "PURCHASE",
-    #             "scrip_name": str(row.get("mutual_fund_scheme", "")),
-    #             "isin": str(row.get("isin", "")).replace(" ", ""),
-    #             "order_number": str(row.get("order_no", "")),
-    #             "folio_number": str(row.get("folio_no", "")),
-    #             "nav": try_float(row.get("buy_rate")),
-    #             "stt": 0.0,
-    #             "unit": try_float(row.get("purchase_units")),
-    #             "redeem_amount": 0.0,
-    #             "purchase_amount": try_float(row.get("buy_total")),
-    #             "net_amount": try_float(row.get("buy_total")),
-    #             "order_date": row.get("date", ""),
-    #             "stamp_duty": 0.0,
-    #             "page_number": row.get("__page__", None),
-    #             "contract_note_no": str(row.get("contract_note_no", "")),
-    #         }
+        for _, row in df.iterrows():
+            try:
+                row = row.to_dict()
 
-    #         results.append({"entityTable": entity_table, "actionTable": action_table})
-    
+                # ISIN is separate, may need to join with following row
+                isin_match = re.search(r"isin[: ]+([A-Z0-9]+)", " ".join([str(v) for v in row.values()]), re.IGNORECASE)
+                isin = isin_match.group(1) if isin_match else ""
+
+                scrip_name = str(get_val(row, col_map["security"], "")).strip()
+                order_type = "PURCHASE" if str(get_val(row, col_map["buy_sell"], "")).upper() == "BUY" else "SELL"
+
+                entity_table = {
+                    "scrip_name": scrip_name,
+                    "scrip_code": scrip_name.split()[0] if scrip_name else "",
+                    "benchmark": "0",
+                    "category": category,
+                    "subcategory": subcategory,
+                    "nickname": scrip_name,
+                    "isin": isin,
+                }
+
+                action_table = {
+                    "scrip_code": scrip_name.split()[0] if scrip_name else "",
+                    "mode": "DEMAT",
+                    "order_type": order_type,
+                    "scrip_name": scrip_name,
+                    "isin": isin,
+                    "order_number": str(get_val(row, col_map["order_no"], "")),
+                    "folio_number": "0",
+                    "nav": try_float(get_val(row, col_map["gross_rate"], 0)),
+                    "stt": try_float(get_val(row, col_map["stt"], 0)),
+                    "unit": try_float(get_val(row, col_map["quantity"], 0)),
+                    "redeem_amount": 0.0 if order_type == "PURCHASE" else try_float(get_val(row, col_map["net_total"], 0)),
+                    "purchase_amount": try_float(get_val(row, col_map["net_total"], 0)) if order_type == "PURCHASE" else 0.0,
+                    "net_amount": try_float(get_val(row, col_map["net_total"], 0)),
+                    "order_date": "",  # you can inject from header TRADE DATE
+                    "stamp_duty": 0.0,
+                    "page_number": row.get("__page__", None),
+                    "contract_note_no": "",  # inject from header CONTRACT NOTE NO
+                }
+
+                results.append({"entityTable": entity_table, "actionTable": action_table})
+
+            except Exception as e:
+                print("Parse error:", e)
+                continue
+
     return results
 
 def build_json_phillip_without_contract_note(tables, category, subcategory):

@@ -3,90 +3,93 @@
     "total_records": 2,
     "sample_record": {
         "entityTable": {
-            "scrip_name": "MIRAE ASSET ARBITRAGE FUND - REGULAR PLAN - GROWTH",
-            "scrip_code": "MAAFRG-GR-L1",
+            "scrip_name": "",
+            "scrip_code": "",
             "benchmark": "0",
             "category": "Equity",
             "subcategory": "Mutual Fund",
-            "nickname": "MIRAE ASSET ARBITRAGE FUND - REGULAR PLAN - GROWTH",
-            "isin": "INF769K01FP7"
+            "nickname": "",
+            "isin": ""
         },
         "actionTable": {
-            "scrip_code": "MAAFRG-GR-L1",
+            "scrip_code": "",
             "mode": "DEMAT",
-            "order_type": "PURCHASE",
-            "scrip_name": "MIRAE ASSET ARBITRAGE FUND - REGULAR PLAN - GROWTH",
-            "isin": "INF769K01FP7",
-            "order_number": "1223768589",
+            "order_type": "SELL",
+            "scrip_name": "",
+            "isin": "",
+            "order_number": "",
             "folio_number": "0",
-            "nav": 23000000.0,
+            "nav": 0.0,
             "stt": 0.0,
-            "unit": 1886233.91,
+            "unit": 0.0,
             "redeem_amount": 0.0,
-            "purchase_amount": 23000000.0,
-            "net_amount": 23000000.0,
-            "order_date": "21/06/2024",
+            "purchase_amount": 0.0,
+            "net_amount": 0.0,
+            "order_date": "",
             "stamp_duty": 0.0,
-            "page_number": null
+            "page_number": 1,
+            "contract_note_no": ""
         }
     },
     "all_records": [
         {
             "entityTable": {
-                "scrip_name": "MIRAE ASSET ARBITRAGE FUND - REGULAR PLAN - GROWTH",
-                "scrip_code": "MAAFRG-GR-L1",
+                "scrip_name": "",
+                "scrip_code": "",
                 "benchmark": "0",
                 "category": "Equity",
                 "subcategory": "Mutual Fund",
-                "nickname": "MIRAE ASSET ARBITRAGE FUND - REGULAR PLAN - GROWTH",
-                "isin": "INF769K01FP7"
+                "nickname": "",
+                "isin": ""
             },
             "actionTable": {
-                "scrip_code": "MAAFRG-GR-L1",
+                "scrip_code": "",
                 "mode": "DEMAT",
-                "order_type": "PURCHASE",
-                "scrip_name": "MIRAE ASSET ARBITRAGE FUND - REGULAR PLAN - GROWTH",
-                "isin": "INF769K01FP7",
-                "order_number": "1223768589",
+                "order_type": "SELL",
+                "scrip_name": "",
+                "isin": "",
+                "order_number": "",
                 "folio_number": "0",
-                "nav": 23000000.0,
+                "nav": 0.0,
                 "stt": 0.0,
-                "unit": 1886233.91,
+                "unit": 0.0,
                 "redeem_amount": 0.0,
-                "purchase_amount": 23000000.0,
-                "net_amount": 23000000.0,
-                "order_date": "21/06/2024",
+                "purchase_amount": 0.0,
+                "net_amount": 0.0,
+                "order_date": "",
                 "stamp_duty": 0.0,
-                "page_number": null
+                "page_number": 1,
+                "contract_note_no": ""
             }
         },
         {
             "entityTable": {
-                "scrip_name": "NIPPON INDIA ARBITRAGE FUND - GROWTH",
-                "scrip_code": "RMFAF-GR-L1",
+                "scrip_name": "None",
+                "scrip_code": "None",
                 "benchmark": "0",
                 "category": "Equity",
                 "subcategory": "Mutual Fund",
-                "nickname": "NIPPON INDIA ARBITRAGE FUND - GROWTH",
-                "isin": "INF204K01IY1"
+                "nickname": "None",
+                "isin": ""
             },
             "actionTable": {
-                "scrip_code": "RMFAF-GR-L1",
+                "scrip_code": "None",
                 "mode": "DEMAT",
-                "order_type": "PURCHASE",
-                "scrip_name": "NIPPON INDIA ARBITRAGE FUND - GROWTH",
-                "isin": "INF204K01IY1",
-                "order_number": "1223766534",
+                "order_type": "SELL",
+                "scrip_name": "None",
+                "isin": "",
+                "order_number": "Total\nSecurities Transaction Tax\nTaxable Value of Supply\nCGST (@9.0000%)\nSGST (@9.0000%)\nExchange Transaction Charges\nSEBI Turnover Fees\nNet Amount Receivable by Client",
                 "folio_number": "0",
-                "nav": 23000000.0,
+                "nav": 0.0,
                 "stt": 0.0,
-                "unit": 925741.74,
+                "unit": 0.0,
                 "redeem_amount": 0.0,
-                "purchase_amount": 23000000.0,
-                "net_amount": 23000000.0,
-                "order_date": "21/06/2024",
+                "purchase_amount": 0.0,
+                "net_amount": 0.0,
+                "order_date": "",
                 "stamp_duty": 0.0,
-                "page_number": null
+                "page_number": 1,
+                "contract_note_no": ""
             }
         }
     ]
