@@ -254,6 +254,7 @@ def build_json_phillip_with_contract_note(tables, category, subcategory):
     """Parser for Phillip Capital format WITH CONTRACT NOTE NO (equity contract notes)"""
     results = []
     print("Parsing Phillip Contract Note (equity format)...")
+    print("working on phillips capital second format")
     print("tables :- ", tables)
     # column mapping to handle variations
     col_map = {
@@ -382,7 +383,7 @@ def build_json_phillip_without_contract_note(tables, category, subcategory):
             "isin": str(row[2]).replace(' ', ''),
             "order_number": str(row[4]),
             "folio_number": "0",
-            "nav": float(row[7]) if len(row) > 7 and str(row[7]).replace('.', '', 1).isdigit() else 0.0,
+            "nav": float(str(row[6]).replace(' ', '')),
             "stt":0.0,
             "unit": float(str(row[5]).replace(' ', '')) ,
             "redeem_amount": 0.0,
@@ -490,10 +491,9 @@ def process_pdf(pdf_file, category, subcategory):
         print(f"ERROR: Failed to process PDF: {e}")
         raise
 
-
 if __name__ == "__main__":
     # Update this to your PDF file path
-    pdf_file = "Phillip.pdf"  # Update with your actual file path
+    pdf_file = "PDF/Password.pdf"  # Update with your actual file path
     category = "Equity"
     subcategory = "Mutual Fund"
 

@@ -1,62 +1,89 @@
 [
     {
         "entityTable": {
-            "scrip_name": "",
-            "scrip_code": "",
+            "scripname": "EDELWEISS NIFTY 50 INDEX FUND - DIRECT\nPLAN - GROWTH",
+            "scripcode": "EDNID1-GR",
             "benchmark": "0",
             "category": "Equity",
             "subcategory": "Mutual Fund",
-            "nickname": "",
-            "isin": ""
+            "nickname": "EDELWEISS NIFTY 50 INDEX FUND - DIRECT\nPLAN - GROWTH",
+            "isin": "INF754K01NB3"
         },
         "actionTable": {
-            "scrip_code": "",
+            "scrip_code": "EDNID1-GR",
             "mode": "DEMAT",
-            "order_type": "SELL",
-            "scrip_name": "",
-            "isin": "",
-            "order_number": "",
-            "folio_number": "0",
-            "nav": 0.0,
+            "order_type": "PURCHASE",
+            "scrip_name": "EDELWEISS NIFTY 50 INDEX FUND - DIRECT\nPLAN - GROWTH",
+            "isin": "INF754K01NB3",
+            "order_number": "1844462180",
+            "folio_number": "91019730381",
+            "nav": 14.5272,
             "stt": 0.0,
-            "unit": 0.0,
+            "unit": 20649.884,
             "redeem_amount": 0.0,
-            "purchase_amount": 0.0,
-            "net_amount": 0.0,
-            "order_date": "",
-            "stamp_duty": 0.0,
-            "page_number": 1,
-            "contract_note_no": ""
+            "purchase_amount": 300000.0,
+            "net_amount": 300000.0,
+            "order_date": "12/05/2025",
+            "stamp_duty": 16.666666666666668,
+            "page_number": 1
         }
     },
     {
         "entityTable": {
-            "scrip_name": "None",
-            "scrip_code": "None",
+            "scripname": "PARAG PARIKH FLEXI CAP FUND - DIRECT PLAN\nGROWTH",
+            "scripcode": "PP001ZG-GR",
             "benchmark": "0",
             "category": "Equity",
             "subcategory": "Mutual Fund",
-            "nickname": "None",
-            "isin": ""
+            "nickname": "PARAG PARIKH FLEXI CAP FUND - DIRECT PLAN\nGROWTH",
+            "isin": "INF879O01027"
         },
         "actionTable": {
-            "scrip_code": "None",
+            "scrip_code": "PP001ZG-GR",
             "mode": "DEMAT",
-            "order_type": "SELL",
-            "scrip_name": "None",
-            "isin": "",
-            "order_number": "Total\nSecurities Transaction Tax\nTaxable Value of Supply\nCGST (@9.0000%)\nSGST (@9.0000%)\nExchange Transaction Charges\nSEBI Turnover Fees\nNet Amount Receivable by Client",
-            "folio_number": "0",
-            "nav": 0.0,
+            "order_type": "PURCHASE",
+            "scrip_name": "PARAG PARIKH FLEXI CAP FUND - DIRECT PLAN\nGROWTH",
+            "isin": "INF879O01027",
+            "order_number": "1844462188",
+            "folio_number": "14483436",
+            "nav": 89.5367,
             "stt": 0.0,
-            "unit": 0.0,
+            "unit": 5584.023,
             "redeem_amount": 0.0,
-            "purchase_amount": 0.0,
-            "net_amount": 0.0,
-            "order_date": "",
-            "stamp_duty": 0.0,
-            "page_number": 1,
-            "contract_note_no": ""
+            "purchase_amount": 500000.0,
+            "net_amount": 500000.0,
+            "order_date": "12/05/2025",
+            "stamp_duty": 16.666666666666668,
+            "page_number": 1
+        }
+    },
+    {
+        "entityTable": {
+            "scripname": "ICICI PRUDENTIAL INDIA OPPORTUNITIES FUND\nDIRECT PLAN GROWTH",
+            "scripcode": "IC9453-GR",
+            "benchmark": "0",
+            "category": "Equity",
+            "subcategory": "Mutual Fund",
+            "nickname": "ICICI PRUDENTIAL INDIA OPPORTUNITIES FUND\nDIRECT PLAN GROWTH",
+            "isin": "INF109KC1RH9"
+        },
+        "actionTable": {
+            "scrip_code": "IC9453-GR",
+            "mode": "DEMAT",
+            "order_type": "PURCHASE",
+            "scrip_name": "ICICI PRUDENTIAL INDIA OPPORTUNITIES FUND\nDIRECT PLAN GROWTH",
+            "isin": "INF109KC1RH9",
+            "order_number": "1846522975",
+            "folio_number": "31152295/93",
+            "nav": 37.82,
+            "stt": 0.0,
+            "unit": 5287.943,
+            "redeem_amount": 0.0,
+            "purchase_amount": 200000.0,
+            "net_amount": 200000.0,
+            "order_date": "12/05/2025",
+            "stamp_duty": 16.666666666666668,
+            "page_number": 1
         }
     }
 ]
